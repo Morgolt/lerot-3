@@ -1,13 +1,13 @@
 training_queries: data/OHSUMED/Fold1/trainingset.txt
 test_queries: data/OHSUMED/Fold1/testset.txt
 feature_count: 64
-num_runs: 1
-num_queries: 10
+num_runs: 100
+num_queries: 21
 query_sampling_method: random
 output_dir: outdir
 output_prefix: Fold1
 user_model: environment.CascadeUserModel
-output_dir_overwrite: True
+output_dir_overwrite: False
 user_model_args:
     --p_click 0:0.0,1:0.5,2:1.0
     --p_stop 0:0.0,1:0.0,2:0.0
@@ -23,4 +23,8 @@ system_args:
     --ranker_arg 3
     --ranker_tie random
 evaluation:
-    - evaluation.NdcgEval
+    - evaluation.NdcgEval cutoff 1
+    - evaluation.NdcgEval cutoff 3
+    - evaluation.NdcgEval cutoff 5
+    - evaluation.NdcgEval cutoff 7
+    - evaluation.NdcgEval cutoff 10

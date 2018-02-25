@@ -1,11 +1,12 @@
 from random import random, randint
 
-from lerot.ranker.AbstractRankingFunction import AbstractRankingFunction
 import numpy as np
+
+from lerot.ranker.AbstractRankingFunction import AbstractRankingFunction
 from lerot.utils import rank
 
-class ProbabilisticRankingFunction(AbstractRankingFunction):
 
+class ProbabilisticRankingFunction(AbstractRankingFunction):
     def init_ranking(self, query):
         self.dirty = False
         self.qid = query.get_qid()
@@ -22,7 +23,7 @@ class ProbabilisticRankingFunction(AbstractRankingFunction):
         self.docids = [docid for (_, docid) in ranked_docids]
         # break ties randomly and sort ranks to compute probabilities
         ranks = np.asarray([i + 1.0 for i in
-            sorted(rank(scores, ties=self.ties, reverse=False))])
+                            sorted(rank(scores, ties=self.ties, reverse=False))])
         # determine probabilities based on (reverse) document ranks
         max_rank = len(ranks)
         tmp_val = max_rank / pow(ranks, self.ranker_type)
