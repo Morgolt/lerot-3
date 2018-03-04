@@ -5,7 +5,8 @@ user_model: environment.CascadeUserModel
 system: retrieval_system.ListwiseLearningSystem
 system_args: --init_weights random
     --sample_weights sample_unit_sphere
-    --comparison comparison.ProbabilisticInterleave
+    --comparison comparison.DocumentConstraints
+    --comparison_args random
     --delta 0.1
     --alpha 0.01
     --ranker ranker.ProbabilisticRankingFunction
@@ -15,14 +16,21 @@ experimenter: experiment.LearningExperiment
 output_dir: outdir
 output_dir_overwrite: True
 evaluation:
-    - evaluation.NdcgEval
-meta: --data yahoo2,700,5
+    - evaluation.NdcgEval cutoff 1
+    - evaluation.NdcgEval cutoff 3
+    - evaluation.NdcgEval cutoff 5
+    - evaluation.NdcgEval cutoff 7
+    - evaluation.NdcgEval cutoff 10
+meta: --data OHSUMED,64,3
    --data_dir data
    --output_base outdir-pi
-   --experiment_name example-experiment
+   --experiment_name test_meta
    --platform local
    --um per nav inf
    --uma per,5,0:0.0,1:0.0,2:0.0,3:0.0,4:1.0,0:0.0,1:0.0,2:0.0,3:0.0,4:1.0
          nav,5,0:0.05,1:0.2,2:0.4,3:0.5,4:0.95,0:0.1,1:0.3,2:0.4,3:0.5,4:0.9
          inf,5,0:0.4,1:0.5,2:0.6,3:0.7,4:0.9,0:0.1,1:0.2,2:0.3,3:0.4,4:0.5
-   --analysis analysis.SummarizeAnalysis.SummarizeAnalysis
+         per,3,0:0.0,1:0.0,2:1.0,0:0.0,1:0.0,2:0.0
+         nav,3,0:0.0,1:0.0,2:1.0,0:0.0,1:0.0,2:0.0
+         inf,3,0:0.0,1:0.0,2:1.0,0:0.0,1:0.0,2:0.0
+   --analysis analysis.SummarizeAnalysis

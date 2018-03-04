@@ -184,8 +184,9 @@ class MetaExperiment:
                 pass
         log_file = os.path.join(conf["output_dir"], "%s-%d.txt.gz" %
                                 (conf["output_prefix"], conf["run_id"]))
+
         log_fh = gzip.open(log_file, "wb")
-        yaml.dump(r, log_fh, default_flow_style=False, Dumper=yaml.Dumper)
+        yaml.dump(r, log_fh, encoding='utf-8', default_flow_style=False, Dumper=yaml.Dumper)
         log_fh.close()
         return log_file
 

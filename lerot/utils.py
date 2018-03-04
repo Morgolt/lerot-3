@@ -24,7 +24,7 @@ def get_class(name):
     Here be dragons.
     """
     module, classname = name.rsplit(".", 1)
-    module = "lerot." + module
+    module = "lerot." + module + "." + classname
 
     try:
         return getattr(import_module(module), classname)

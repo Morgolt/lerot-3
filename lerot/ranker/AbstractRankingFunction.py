@@ -1,3 +1,4 @@
+from lerot import utils
 from lerot.utils import get_class
 
 
@@ -24,7 +25,8 @@ class AbstractRankingFunction:
         self.ranking_model = get_class(ranking_model_str)(feature_count)
 
         if sample:
-            self.sample = get_class("utils." + sample)
+            # todo: think about dynamic import
+            self.sample = utils.sample_unit_sphere
 
         self.ties = ties
         self.w = self.ranking_model.initialize_weights(init)
