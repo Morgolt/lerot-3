@@ -1,5 +1,5 @@
 num_runs: 1
-num_queries: 10
+num_queries: 23
 query_sampling_method: random
 user_model: environment.CascadeUserModel
 system: retrieval_system.ListwiseLearningSystem
@@ -21,7 +21,7 @@ evaluation:
     - evaluation.NdcgEval cutoff 5
     - evaluation.NdcgEval cutoff 7
     - evaluation.NdcgEval cutoff 10
-meta: --data OHSUMED,64,3
+meta: --data OHSUMED,45,3
    --data_dir data
    --output_base outdir-pi
    --experiment_name test_meta

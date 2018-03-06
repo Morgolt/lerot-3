@@ -84,7 +84,11 @@ class SummarizeAnalysis(AbstractAnalysis):
         fh = open(self.analyticsfilenametmp, 'w+')
         yaml.dump(dump, fh, Dumper=Dumper)
         fh.close()
-        os.rename(self.analyticsfilenametmp, self.analyticsfilename)
+        try:
+            os.rename(self.analyticsfilenametmp, self.analyticsfilename)
+        except WindowsError:
+            os.remove(self.analyticsfilename)
+            os.rename(self.analyticsfilenametmp, self.analyticsfilename)
         return self.analyticsfilename
 
 

@@ -1,4 +1,3 @@
-
 try:
     from include import *
 except:
@@ -9,4 +8,6 @@ if __name__ == "__main__":
     experiment = MetaExperiment()
     # todo: fix config creation  in code (debug)
     # todo: run summarization during meta experiment
+    # todo: add random state
+    # todo: DCM
     experiment.run()
