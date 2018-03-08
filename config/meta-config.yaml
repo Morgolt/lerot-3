@@ -1,4 +1,4 @@
-num_runs: 1
+num_runs: 10
 num_queries: 23
 query_sampling_method: random
 user_model: environment.CascadeUserModel
@@ -20,7 +20,11 @@ output_dir: outdir
 output_dir_overwrite: True
 evaluation:
     - evaluation.NdcgEval cutoff 1
-meta: --data OHSUMED,45,3
+    - evaluation.NdcgEval cutoff 3
+    - evaluation.NdcgEval cutoff 5
+    - evaluation.NdcgEval cutoff 7
+    - evaluation.NdcgEval cutoff 10
+meta: --data OHSUMED,64,3
    --data_dir data
    --output_base outdir-pi
    --experiment_name test_meta

@@ -87,8 +87,8 @@ class LearningExperiment(AbstractLearningExperiment):
             dict_name = eval_name + '@' + str(eval_dict['cutoff'])
             logging.info("Final offline %s = %.3f" % (dict_name,
                          offline_test_evaluation[dict_name][-1]))
-            summary["online_ndcg"] = online_evaluation[dict_name]
-            summary["offline_ndcg"] = offline_test_evaluation[dict_name]
+            summary["online_ndcg" + dict_name] = online_evaluation[dict_name]
+            summary["offline_ndcg" + dict_name] = offline_test_evaluation[dict_name]
         logging.info("Length of final weight vector = %.3f" %
                      norm(current_solution.w))
         return summary
