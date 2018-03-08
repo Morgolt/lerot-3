@@ -35,7 +35,6 @@ class LearningExperiment(AbstractLearningExperiment):
                 continue
             online_evaluation[dict_name] = []
             offline_test_evaluation[dict_name] = []
-            # offline_train_evaluation[dict_name] = []
         similarities = [.0]
 
         # Process queries

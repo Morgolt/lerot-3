@@ -1,5 +1,6 @@
 from random import random, randint
 
+
 import numpy as np
 
 from lerot.ranker.AbstractRankingFunction import AbstractRankingFunction

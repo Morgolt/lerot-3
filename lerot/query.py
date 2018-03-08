@@ -2,12 +2,14 @@
 Interface to query data with functionality for reading queries from svmlight
 format, both sequentially and in batch mode.
 """
-import gzip
-import sys
 import gc
-import numpy as np
-from .document import Document
+import gzip
 import os.path
+import sys
+
+import numpy as np
+
+from .document import Document
 
 
 class SimpleBufferedLineReader:
@@ -120,7 +122,7 @@ class Query:
                                   repr(value))) for pos, value in enumerate(
                 self.get_feature_vector(doc)) if not (value == 0 and sparse)]
             print(self.get_label(doc), ':'.join(("qid",
-                                                        self.get_qid())), ' '.join(features), file=fh)
+                                                 self.get_qid())), ' '.join(features), file=fh)
             comment = self.get_comment(doc)
             if comment:
                 print(comment, file=fh)
@@ -280,6 +282,7 @@ class Queries:
 
     def get_size(self):
         return self.__len__()
+
 
 def load_queries(filename, features, preserve_comments=False):
     """Utility method for loading queries from a file."""

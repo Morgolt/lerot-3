@@ -4,7 +4,9 @@ import gzip
 
 import logging
 import os
+import random
 
+import numpy
 import yaml
 
 from lerot.experiment.GenericExpriment import GenericExperiment
@@ -50,7 +52,10 @@ class MetaExperiment:
         self.experiment_args = None
         if args.file:
             config_file = open(args.file)
-            self.experiment_args = yaml.load(config_file, Loader=yaml.Loader)
+            config = yaml.load(config_file, Loader=yaml.Loader)
+            self.experiment_args = config
+            random.seed(config.get('seed', 42))
+            numpy.random.seed(config.get('seed', 42))
             config_file.close()
             try:
                 self.meta_args = vars(parser.parse_known_args(
@@ -221,8 +226,8 @@ class MetaExperiment:
 
         logging.info("Running %d tasks locally" % len(self.configurations))
         for conf in self.configurations:
-            train = glob.glob(os.path.join(conf["fold_dir"], "*train.txt*"))[0]
-            test = glob.glob(os.path.join(conf["fold_dir"], "*test.txt*"))[0]
+            train = glob.glob(os.path.join(conf["fold_dir"], "*trainingset.txt*"))[0]
+            test = glob.glob(os.path.join(conf["fold_dir"], "*testset.txt*"))[0]
             conf["test_queries"] = test
             conf["training_queries"] = train
 

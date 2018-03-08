@@ -1,7 +1,7 @@
 training_queries: data/OHSUMED/Fold1/trainingset.txt
 test_queries: data/OHSUMED/Fold1/testset.txt
 feature_count: 64
-num_runs: 100
+num_runs: 1
 num_queries: 21
 query_sampling_method: random
 output_dir: outdir
