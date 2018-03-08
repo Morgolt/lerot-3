@@ -1,6 +1,7 @@
-training_queries: data/OHSUMED/Fold1/trainingset.txt
-test_queries: data/OHSUMED/Fold1/testset.txt
-feature_count: 64
+training_queries: data/OHSUMED/Fold1/train.txt
+test_queries: data/OHSUMED/Fold1/test.txt
+feature_count: 45
+seed: 42
 num_runs: 1
 num_queries: 21
 query_sampling_method: random

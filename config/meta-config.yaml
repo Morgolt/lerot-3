@@ -20,7 +20,7 @@ output_dir: outdir
 output_dir_overwrite: True
 evaluation:
     - evaluation.NdcgEval cutoff 1
-meta: --data OHSUMED,64,3
+meta: --data OHSUMED,45,3
    --data_dir data
    --output_base outdir-pi
    --experiment_name test_meta

@@ -17,12 +17,12 @@ class NdcgEval(DcgEval):
         """
         if cutoff == -1 or cutoff > len(ranking):
             cutoff = len(ranking)
-        if query.has_ideal():
-            ideal_dcg = query.get_ideal()
-        else:
-            ideal_labels = list(reversed(sorted(query.get_labels())))[:cutoff]
-            ideal_dcg = self.get_dcg(ideal_labels, cutoff)
-            query.set_ideal(ideal_dcg)
+        # if query.has_ideal():
+        #     ideal_dcg = query.get_ideal()
+        # else:
+        ideal_labels = list(reversed(sorted(query.get_labels())))[:cutoff]
+        ideal_dcg = self.get_dcg(ideal_labels, cutoff)
+        query.set_ideal(ideal_dcg)
 
         if ideal_dcg == .0:
             # return 0 when there are no relevant documents. This is consistent

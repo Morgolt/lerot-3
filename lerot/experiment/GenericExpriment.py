@@ -4,6 +4,8 @@ import logging
 import gzip
 import os.path
 import sys
+import random
+import numpy as np
 
 from lerot.query import load_queries
 from lerot.utils import get_class
@@ -60,6 +62,8 @@ class GenericExperiment:
                                        "OUTPUT_DIR/PREFIX-RUN_ID.txt.gz")
         detail_group.add_argument("-e", "--experimenter",
                                   help="Experimenter type.")
+
+        detail_group.add_argument("--seed")
         # run the parser
         if args_str:
             args = parser.parse_known_args(args_str.split())[0]
@@ -97,6 +101,15 @@ class GenericExperiment:
                      self.experiment_args)
 
         # set default values for optional arguments
+        if "seed" not in self.experiment_args:
+            # set random seed for reproducibility
+            random.seed(42)
+            np.random.seed(42)
+        else:
+            seed = self.experiment_args["seed"]
+            random.seed(seed)
+            np.random.seed(seed)
+
         if "query_sampling_method" not in self.experiment_args:
             self.experiment_args["query_sampling_method"] = "random"
         if "output_dir_overwrite" not in self.experiment_args:
@@ -135,6 +148,8 @@ class GenericExperiment:
                   config_bk_file,
                   default_flow_style=False)
         config_bk_file.close()
+
+
 
         # load training and test queries
         training_file = self.experiment_args["training_queries"]
