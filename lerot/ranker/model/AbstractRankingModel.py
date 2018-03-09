@@ -1,5 +1,3 @@
-from random import gauss
-
 import numpy as np
 
 from lerot.utils import sample_unit_sphere
@@ -21,7 +19,7 @@ class AbstractRankingModel(object):
         elif method == "fullyrandom":
             v = np.zeros(self.feature_count)
             for i in range(self.feature_count):
-                v[i] = gauss(0, 1)
+                v[i] = np.random.standard_normal()
             return v
         else:
             try:

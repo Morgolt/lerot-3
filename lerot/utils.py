@@ -2,10 +2,10 @@
 Utility functions
 """
 from importlib import import_module
-from numpy import dot, sqrt
+
 import numpy as np
+from numpy import dot, sqrt
 from scipy.linalg import norm
-from random import sample
 
 
 def string_to_boolean(string):
@@ -64,7 +64,7 @@ def rank(x, ties, reverse=False):
     elif ties == "last":
         ix = zip(x, range(n), range(n))
     elif ties == "random":
-        ix = zip(x, sample(range(n), n), range(n))
+        ix = zip(x, np.random.permutation(n), range(n))
     else:
         raise Exception("Unknown method for breaking ties: \"%s\"" % ties)
     ix = list(ix)
@@ -91,9 +91,9 @@ def get_binomial_ci(p_hat, n):
     # http://www.evanmiller.org/how-not-to-sort-by-average-rating.html
     # n = float(totalW1 + totalW2)
     lower = (p_hat + zA * zA / (2 * n) - zA * sqrt((p_hat * (1 - p_hat) +
-             zA * zA / (4 * n)) / n)) / (1 + zA * zA / n)
+                                                    zA * zA / (4 * n)) / n)) / (1 + zA * zA / n)
     upper = (p_hat + zA * zA / (2 * n) + zA * sqrt((p_hat * (1 - p_hat) +
-             zA * zA / (4 * n)) / n)) / (1 + zA * zA / n)
+                                                    zA * zA / (4 * n)) / n)) / (1 + zA * zA / n)
     return (lower, upper)
 
 

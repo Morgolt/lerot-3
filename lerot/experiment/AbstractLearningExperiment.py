@@ -1,4 +1,4 @@
-import random
+import numpy as np
 
 from lerot.utils import get_class
 
@@ -29,8 +29,8 @@ class AbstractLearningExperiment:
             # First element in this list is the evaluation method
             kwargs = {}
             # read in additional arguments
-            for i in range(1, len(split_args)-1, 2):
-                kwargs[split_args[i]] = int(split_args[i+1])
+            for i in range(1, len(split_args) - 1, 2):
+                kwargs[split_args[i]] = int(split_args[i + 1])
 
             # Here go default values
             if 'cutoff' not in kwargs:
@@ -43,14 +43,14 @@ class AbstractLearningExperiment:
         self.queryid = None
 
     def _sample_qid(self, query_keys, query_count, query_length):
-            if self.query_sampling_method == "random":
-                return query_keys[random.randint(0, query_length - 1)]
-            elif self.query_sampling_method == "fixed":
-                return query_keys[query_count % query_length]
-            elif self.query_sampling_method == "one":
-                if self.queryid is None:
-                    self.queryid = random.randrange(query_length)
-                return query_keys[self.queryid]
+        if self.query_sampling_method == "random":
+            return query_keys[np.random.randint(0, query_length - 1)]
+        elif self.query_sampling_method == "fixed":
+            return query_keys[query_count % query_length]
+        elif self.query_sampling_method == "one":
+            if self.queryid is None:
+                self.queryid = np.random.randint(0, query_length - 1)
+            return query_keys[self.queryid]
 
     def run(self):
         raise NotImplementedError("Derived class needs to implement run.")

@@ -1,4 +1,4 @@
-num_runs: 10
+num_runs: 1
 num_queries: 23
 query_sampling_method: random
 user_model: environment.CascadeUserModel

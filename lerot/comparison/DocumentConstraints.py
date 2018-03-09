@@ -1,5 +1,4 @@
 import argparse
-from random import randint
 import numpy as np
 
 from lerot.comparison.AbstractInterleavedComparison import AbstractInterleavedComparison
@@ -44,7 +43,7 @@ class DocumentConstraints(AbstractInterleavedComparison):
 
         if self.startinglist == "random":
             # pick starting list at random
-            first = randint(0, 1)
+            first = np.random.randint(0, 1)
         elif self.startinglist == "fixed":
             first = 0
         elif self.startinglist == "0":

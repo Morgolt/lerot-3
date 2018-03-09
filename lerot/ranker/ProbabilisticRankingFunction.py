@@ -1,6 +1,3 @@
-from random import random, randint
-
-
 import numpy as np
 
 from lerot.ranker.AbstractRankingFunction import AbstractRankingFunction
@@ -55,7 +52,7 @@ class ProbabilisticRankingFunction(AbstractRankingFunction):
         # likely docs first.
         cumprobs = np.cumsum(self.probs)
         pick = -1
-        rand = random()  # produces a float in range [0.0, 1.0)
+        rand = np.random.rand()  # produces a float in range [0.0, 1.0)
         for pos, cp in enumerate(cumprobs):
             if rand < cp:
                 pick = self.docids.pop(pos)  # pop, because it's a list
@@ -85,7 +82,7 @@ class ProbabilisticRankingFunction(AbstractRankingFunction):
         if len(self.docids) < 1:
             raise Exception("There are no more documents to be selected")
         # otherwise, return a random document
-        rn = randint(0, len(self.docids) - 1)
+        rn = np.random.randint(0, len(self.docids) - 1)
         return self.docids.pop(rn)
 
     def get_ranking(self):

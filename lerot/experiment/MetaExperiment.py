@@ -4,9 +4,6 @@ import gzip
 
 import logging
 import os
-import random
-
-import numpy
 import yaml
 
 from lerot.experiment.GenericExpriment import GenericExperiment
@@ -54,8 +51,6 @@ class MetaExperiment:
             config_file = open(args.file)
             config = yaml.load(config_file, Loader=yaml.Loader)
             self.experiment_args = config
-            random.seed(config.get('seed', 42))
-            numpy.random.seed(config.get('seed', 42))
             config_file.close()
             try:
                 self.meta_args = vars(parser.parse_known_args(

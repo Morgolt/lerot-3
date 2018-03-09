@@ -4,7 +4,6 @@ import logging
 import gzip
 import os.path
 import sys
-import random
 import numpy as np
 
 from lerot.query import load_queries
@@ -103,11 +102,9 @@ class GenericExperiment:
         # set default values for optional arguments
         if "seed" not in self.experiment_args:
             # set random seed for reproducibility
-            random.seed(42)
             np.random.seed(42)
         else:
             seed = self.experiment_args["seed"]
-            random.seed(seed)
             np.random.seed(seed)
 
         if "query_sampling_method" not in self.experiment_args:

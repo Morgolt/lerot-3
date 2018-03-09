@@ -1,8 +1,6 @@
 import argparse
 import re
-from random import random
-
-from numpy import zeros
+import numpy as np
 
 from lerot.environment.AbstractUserModel import AbstractUserModel
 from lerot.utils import split_arg_str
@@ -31,18 +29,18 @@ class CascadeUserModel(AbstractUserModel):
 
     def get_clicks(self, result_list, labels, **kwargs):
         """simulate clicks on list l"""
-        c = zeros(len(result_list), dtype='int')
+        c = np.zeros(len(result_list), dtype='int')
         for pos, d in enumerate(result_list):
             label = labels[d.get_id()]
             if label not in self.p_click:
                 raise Exception("Cardinality of labels does not match the user"
                                 " model.")
             # generate a random number between 0 and 1
-            rand = random()
+            rand = np.random.rand()
             if rand < self.p_click[label]:
                 c[pos] = 1  # click at rank r
                 # if there was a click, determine whether to stop
-                rand = random()
+                rand = np.random.rand()
                 if rand < self.p_stop[label]:
                     break
         return c
