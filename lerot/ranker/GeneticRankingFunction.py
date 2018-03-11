@@ -1,6 +1,5 @@
 import argparse
 
-from lerot.ranker import AbstractRankingFunction
 from lerot.retrieval_system import AbstractLearningSystem
 from lerot.utils import rank, split_arg_str, get_class
 
@@ -65,10 +64,6 @@ class GeneticListwiseLearningSystem(AbstractLearningSystem):
 
     def get_ranked_list(self, query, get_new_candidate=True):
         self.query_count += 1
-        if self.anneal > 0 and self.query_count % self.anneal == 0:
-            self.delta /= 2
-            self.alpha /= 2
-
         if get_new_candidate:
             self.candidate_ranker, self.current_u = self._get_candidate()
 
