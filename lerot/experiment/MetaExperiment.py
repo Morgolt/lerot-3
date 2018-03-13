@@ -1,7 +1,6 @@
 import argparse
 import glob
 import gzip
-
 import logging
 import os
 import yaml
@@ -146,9 +145,9 @@ class MetaExperiment:
                         if self.meta_args["rerun"]:
                             if not os.path.exists(os.path.join(
                                     args["output_dir"],
-                                            "%s-%d.txt.gz" %
-                                            (args["output_prefix"],
-                                             run_id))):
+                                    "%s-%d.txt.gz" %
+                                    (args["output_prefix"],
+                                     run_id))):
                                 self.configurations.append(args)
                             else:
                                 skip += 1
@@ -176,16 +175,17 @@ class MetaExperiment:
         for a in self.analytics:
             a.finish()
 
-    def store(self, conf, r):
+    @staticmethod
+    def store(conf, r):
         if not os.path.exists(conf["output_dir"]):
             try:
                 os.makedirs(conf["output_dir"])
             except:
                 pass
-        log_file = os.path.join(conf["output_dir"], "%s-%d.txt.gz" %
+        log_file = os.path.join(conf["output_dir"], "%s-%d.txt" %
                                 (conf["output_prefix"], conf["run_id"]))
 
-        log_fh = gzip.open(log_file, "wb")
+        log_fh = open(log_file, "wb")
         yaml.dump(r, log_fh, encoding='utf-8', default_flow_style=False, Dumper=yaml.Dumper)
         log_fh.close()
         return log_file
@@ -242,7 +242,7 @@ class MetaExperiment:
             r = e.run_experiment(None)
             log_file = self.store(conf, r)
             self.update_analytics_file(log_file)
-            self.finish_analytics()
             logging.info("Done with %s, run %d" %
                          (conf["output_dir"], conf["run_id"]))
+        self.finish_analytics()
         logging.info("Done")

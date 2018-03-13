@@ -1,5 +1,5 @@
 num_runs: 1
-num_queries: 23
+num_queries: 10
 query_sampling_method: random
 user_model: environment.CascadeUserModel
 system: retrieval_system.ListwiseLearningSystem
@@ -29,7 +29,7 @@ meta: --data OHSUMED,64,3
    --output_base outdir-pi
    --experiment_name test_meta
    --platform local
-   --um per nav inf
+   --um per
    --uma per,5,0:0.0,1:0.0,2:0.0,3:0.0,4:1.0,0:0.0,1:0.0,2:0.0,3:0.0,4:1.0
          nav,5,0:0.05,1:0.2,2:0.4,3:0.5,4:0.95,0:0.1,1:0.3,2:0.4,3:0.5,4:0.9
          inf,5,0:0.4,1:0.5,2:0.6,3:0.7,4:0.9,0:0.1,1:0.2,2:0.3,3:0.4,4:0.5

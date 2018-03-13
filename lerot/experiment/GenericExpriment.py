@@ -186,19 +186,17 @@ class GenericExperiment:
 
     def _run(self, run_id):
         logging.info("run %d starts" % run_id)
-        aux_log_file = os.path.join(self.output_dir, "_%s-%d.txt.gz" %
+        aux_log_file = os.path.join(self.output_dir, "_%s-%d.txt" %
                                     (self.output_prefix, run_id))
-        aux_log_fh = gzip.open(aux_log_file, "wb")
-
-        # Returns summary after running an experiment
-        summarized_experiment = self.run_experiment(aux_log_fh)
-        aux_log_fh.close()
+        with open(aux_log_file, "w") as aux_log_fh:
+            # Returns summary after running an experiment
+            summarized_experiment = self.run_experiment(aux_log_fh)
+            aux_log_fh.close()
         # Setup result log file
-        log_file = os.path.join(self.output_dir, "%s-%d.txt.gz" %
+        log_file = os.path.join(self.output_dir, "%s-%d.txt" %
                                 (self.output_prefix, run_id))
-        with gzip.open(log_file, "wb") as log_fh:
+        with open(log_file, "w") as log_fh:
             yaml.dump(summarized_experiment, log_fh, encoding='utf-8', default_flow_style=False)
-            log_fh.close()
         logging.info("run %d done" % run_id)
 
         return summarized_experiment
