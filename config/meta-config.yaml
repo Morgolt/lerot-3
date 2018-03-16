@@ -11,7 +11,7 @@ system_args:
     --comparison_args random
     --delta 0.1
     --alpha 0.01
-    --ranker ranker.ProbabilisticRankingFunction
+    --ranker ranker.DeterministicRankingFunction
     --ranker_arg 3
     --ranker_tie random
     --processes 4

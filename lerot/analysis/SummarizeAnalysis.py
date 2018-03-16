@@ -81,9 +81,8 @@ class SummarizeAnalysis(AbstractAnalysis):
                                            float(std(self.summaries[um][data]["agg_online_ndcg"][i])),
                                            float(min(self.summaries[um][data]["agg_online_ndcg"][i])),
                                            float(max(self.summaries[um][data]["agg_online_ndcg"][i]))])
-        fh = open(self.analyticsfilenametmp, 'a')
-        yaml.dump(dump, fh, Dumper=Dumper)
-        fh.close()
+        with open(self.analyticsfilenametmp, 'w') as fh:
+            yaml.dump(dump, fh, Dumper=Dumper)
         try:
             os.rename(self.analyticsfilenametmp, self.analyticsfilename)
         except WindowsError:

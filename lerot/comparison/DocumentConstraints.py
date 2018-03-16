@@ -1,4 +1,5 @@
 import argparse
+
 import numpy as np
 
 from lerot.comparison.AbstractInterleavedComparison import AbstractInterleavedComparison
@@ -12,15 +13,15 @@ class DocumentConstraints(AbstractInterleavedComparison):
     def __init__(self, arg_str="random"):
         if arg_str.startswith("--"):
             parser = argparse.ArgumentParser(description="Parse arguments for "
-                "interleaving method.", prog=self.__class__.__name__)
+                                                         "interleaving method.", prog=self.__class__.__name__)
             parser.add_argument("-s", "--startinglist", default="random")
             parser.add_argument("-c", "--constraints", type=int, default=3,
-                help="Specify which constraint types should be considered. Pos"
-                "sible values: 1 - only infer constraints between clicked and "
-                "previous non-clicked documents; 2 - in  addition, infer const"
-                "raints with the document immediately following a clicked one,"
-                " if it was not clicked; 3: in addition infer constraints \w t"
-                "he next document that was not clicked.")
+                                help="Specify which constraint types should be considered. Pos"
+                                     "sible values: 1 - only infer constraints between clicked and "
+                                     "previous non-clicked documents; 2 - in  addition, infer const"
+                                     "raints with the document immediately following a clicked one,"
+                                     " if it was not clicked; 3: in addition infer constraints \w t"
+                                     "he next document that was not clicked.")
             args = vars(parser.parse_known_args(split_arg_str(arg_str))[0])
             self.startinglist = args["startinglist"]
             self.constraints = args["constraints"]
@@ -92,12 +93,12 @@ class DocumentConstraints(AbstractInterleavedComparison):
                 if len(np.where(a[0] == l[lo])[0]):
                     # doc we want lower is in top N
                     if not len(np.where(a[0] == l[hi])[0]) or (
-                        np.where(a[0] == l[lo]) < np.where(a[0] == l[hi])):
+                            np.where(a[0] == l[lo]) < np.where(a[0] == l[hi])):
                         # and the other is not in top N or has a lower rank
                         c1 += 1
                 if len(np.where(a[1] == l[lo])[0]):
                     if not len(np.where(a[1] == l[hi])[0]) or (
-                        np.where(a[1] == l[lo]) < np.where(a[1] == l[hi])):
+                            np.where(a[1] == l[lo]) < np.where(a[1] == l[hi])):
                         c2 += 1
         return (c1, c2)
 
