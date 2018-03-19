@@ -1,1 +1,0 @@
-from lerot.comparison.DocumentConstraints import DocumentConstraints

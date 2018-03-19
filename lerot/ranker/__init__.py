@@ -1,2 +1,0 @@
-from lerot.ranker.AbstractRankingFunction import AbstractRankingFunction
-from lerot.ranker.ProbabilisticRankingFunction import ProbabilisticRankingFunction
