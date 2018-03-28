@@ -1,0 +1,2 @@
+from lerot.system.WTALearningSystem import WTALearningSystem
+from lerot.system.GALearningSystem import GALearningSystem

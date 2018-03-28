@@ -48,8 +48,7 @@ class AbstractEval:
         """
 
         scores = solution.score(query.get_feature_vectors())
-        sorted_docs = self._sort_docids_by_score(query.get_docids(), scores,
-                                                 ties=ties)
+        sorted_docs = self._sort_docids_by_score(query.get_docids(), scores, ties=ties)
         return self.evaluate_ranking(sorted_docs, query, cutoff)
 
     def evaluate_ranking(self, ranking, query, cutoff=-1):

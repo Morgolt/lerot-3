@@ -85,11 +85,13 @@ class WTALearningSystem(AbstractLearningSystem):
                                               self.current_query)
         winners_idx = np.argwhere(creds[1:] == np.amax(creds)).flatten()
         if max(creds) != creds[0]:
-            target_u = 0
             if self.update == 'wta':
                 target_u = self.current_u[np.random.choice(winners_idx)]
             elif self.update == 'mw':
-                target_u = np.sum(self.current_u) / len(self.current_u)
+                winners = self.current_u[winners_idx]
+                target_u = np.sum(winners, axis=0) / len(self.current_u)
+            else:
+                raise AttributeError("'{}' is not legal update type.".format(self.update))
             self.ranker.update_weights(target_u, self.alpha)
         return self.get_solution()
 

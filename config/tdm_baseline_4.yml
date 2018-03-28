@@ -1,0 +1,47 @@
+num_runs: 25
+num_queries: 1000
+query_sampling_method: random
+user_model: user.CascadeUserModel
+system: system.WTALearningSystem
+seed: 42
+system_args:
+    --init_weights random
+    --sample_weights sample_unit_sphere
+    --comparison interleave.TeamDraftMultileave
+    --comparison_args random
+    --delta 0.1
+    --alpha 0.01
+    --ranker ranker.ProbabilisticRankingFunction
+    --ranker_arg 3
+    --ranker_tie random
+    --update mw
+    --seed 42
+    --num_rankers 4
+experimenter: experiment.LearningExperiment
+output_dir: outdir
+output_dir_overwrite: True
+evaluation:
+    - evaluation.NdcgEval cutoff 1
+    - evaluation.NdcgEval cutoff 3
+    - evaluation.NdcgEval cutoff 5
+    - evaluation.NdcgEval cutoff 7
+    - evaluation.NdcgEval cutoff 10
+meta: --data OHSUMED,45,3
+             MQ2007,46,3
+             MQ2008,46,3
+             TD2003,44,3
+             TD2007,44,3
+   --data_dir data
+   --output_base outdir-pi
+   --experiment_name test_meta
+   --platform local
+   --um per nav inf random
+   --uma per,5,0:0.0,1:0.2,2:0.4,3:0.8,4:1.0,0:0.0,1:0.0,2:0.0,3:0.0,4:0.0
+         nav,5,0:0.05,1:0.3,2:0.5,3:0.7,4:0.95,0:0.2,1:0.3,2:0.5,3:0.7,4:0.9
+         inf,5,0:0.4,1:0.6,2:0.7,3:0.8,4:0.9,0:0.1,1:0.2,2:0.3,3:0.4,4:0.5
+         random,5,0:0.5,1:0.5,2:0.5,3:0.5,4:0.5,0:0.0,1:0.0,2:0.0,3:0.0,4:0.0
+         per,3,0:0.0,1:0.5,2:1.0,0:0.0,1:0.0,2:0.0
+         nav,3,0:0.0,1:0.0,2:1.0,0:0.0,1:0.0,2:0.0
+         inf,3,0:0.0,1:0.0,2:1.0,0:0.0,1:0.0,2:0.0
+         random,3,0:0.5,1:0.5,2:0.5,0:0.0,1:0.0,2:0.0
+   --num_rankers 1 4 6 9
