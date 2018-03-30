@@ -8,7 +8,7 @@ from deap import creator, base, tools
 from tqdm import tqdm
 
 from lerot.evaluation import NdcgEval
-from lerot.interleave import ProbabilisticMultileave, TeamDraftMultileave
+from lerot.interleave import ProbabilisticMultileave
 from lerot.query import load_queries
 from lerot.ranker.GARankingFunction import GARankingFunction
 from lerot.user import CascadeUserModel
@@ -37,15 +37,16 @@ def init_ranking(population):
 def update_solution(rl, best, ctx, c, population, comparison, q):
     creds = comparison.infer_outcome(rl, ctx, c, q)
     # todo: idea - use gained values as DCG relevance labels -> DCG Fitness
-    for part, fit in zip(population, creds):
-        part.fitness.values = (fit,)
-        if part.best is None or part.best.fitness < part.fitness:
-            part.best = creator.Particle(part)
-            part.best.fitness.values = part.fitness.values
-        if best is None or best.fitness < part.fitness:
-            best = creator.Particle(part)
-            best.fitness.values = part.fitness.values
-            # print(best.fitness.values[0])
+    if creds is not None:
+        for part, fit in zip(population, creds):
+            part.fitness.values = (fit,)
+            if part.best is None or part.best.fitness < part.fitness:
+                part.best = creator.Particle(part)
+                part.best.fitness.values = part.fitness.values
+            if best is None or best.fitness < part.fitness:
+                best = creator.Particle(part)
+                best.fitness.values = part.fitness.values
+                # print(best.fitness.values[0])
     for part in population:
         toolbox.update(part, best)
 
@@ -109,24 +110,22 @@ if __name__ == '__main__':
     np.random.seed(42)
     random.seed(42)
     feature_count = 45
-    num_rankers = 20
+    num_rankers = 2
     num_queries = 1000
     GAMMA = 1
-    ALPHA = 0.5
+    ALPHA = 0.01
 
-    creator.create("FitnessClicks", base.Fitness, weights=(1.0,))
+    creator.create("FitnessClicks", base.Fitness, weights=(-1.0,))
     creator.create("Particle", np.ndarray, fitness=creator.FitnessClicks, speed=list, smin=None, smax=None, best=None)
 
     toolbox = base.Toolbox()
-    toolbox.register("particle", init_particle, size=feature_count, pmin=-1, pmax=1, smin=-GAMMA,
-                     smax=GAMMA)
+    toolbox.register("particle", init_particle, size=feature_count, pmin=-1, pmax=1, smin=-GAMMA, smax=GAMMA)
     toolbox.register("update", update_particle, phi1=ALPHA, phi2=ALPHA)
 
     toolbox.register("population", tools.initRepeat, list, toolbox.particle)
     toolbox.register("update", update_particle, phi1=0, phi2=0)
 
-    multileave = TeamDraftMultileave()
-    # ProbabilisticMultileave()
+    multileave = ProbabilisticMultileave()  # TeamDraftMultileave()
 
     um = CascadeUserModel("--p_click 0:0.0, 1:0.5, 2:1.0 --p_stop  0:0, 1:0, 2:0")
 
@@ -170,11 +169,12 @@ if __name__ == '__main__':
         clicks = um.get_clicks(result_list, query.get_labels())
 
         current_solution, pop = update_solution(result_list, best, context, clicks, pop, multileave, query)
+        best = current_solution
 
         for eval_name, eval_dict in evaluations:
             # Create dict name as done above
             dict_name = eval_name + '@' + str(eval_dict['cutoff'])
-            e1 = eval_dict['eval_class'].evaluate_all(GARankingFunction(current_solution), test, eval_dict['cutoff'])
+            e1 = eval_dict['eval_class'].evaluate_all(GARankingFunction(best), test, eval_dict['cutoff'])
             offline_evaluation[dict_name].append(float(e1))
 
             # print("Current offline %s = %.3f" % (dict_name, offline_evaluation[dict_name][-1]))

@@ -11,20 +11,20 @@ class ProbabilisticRankingFunction(AbstractRankingFunction):
         self.qid = query.get_qid()
         scores = self.ranking_model.score(query.get_feature_vectors(), self.w.transpose())
         # rank scores
-        ranks = rank(scores, ties=self.ties, reverse=False)
+        self.ranks = rank(scores, ties=self.ties, reverse=False)
         # get docids for the ranked scores
         ranked_docids = []
         for pos, docid in enumerate(query.__docids__):
-            ranked_docids.append((ranks[pos], docid))
+            ranked_docids.append((self.ranks[pos], docid))
         # sort docids by rank
         ranked_docids.sort(reverse=True)
         self.docids = [docid for (_, docid) in ranked_docids]
         # break ties randomly and sort ranks to compute probabilities
-        ranks = np.asarray([i + 1.0 for i in
+        self.ranks = np.asarray([i + 1.0 for i in
                             sorted(rank(scores, ties=self.ties, reverse=False))])
         # determine probabilities based on (reverse) document ranks
-        max_rank = len(ranks)
-        tmp_val = max_rank / pow(ranks, self.ranker_type)
+        max_rank = len(self.ranks)
+        tmp_val = max_rank / pow(self.ranks, self.ranker_type)
         self.probs = tmp_val / sum(tmp_val)
 
     def document_count(self):

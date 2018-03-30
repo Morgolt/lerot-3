@@ -4,16 +4,19 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from bokeh.layouts import row, column
 from bokeh.plotting import figure, output_file, show
 from deap import creator, base, tools
+from scoop import futures
 from tqdm import tqdm
 
 from lerot.evaluation import NdcgEval
-from lerot.interleave import TeamDraftMultileave
+from lerot.interleave import ProbabilisticMultileave, TeamDraftMultileave
 from lerot.query import load_queries
 from lerot.ranker.GARankingFunction import GARankingFunction
 from lerot.user import CascadeUserModel
 from lerot.utils import sample_unit_sphere
+from bokeh.palettes import Set1_5
 
 QUERY_COUNT = 0
 
@@ -38,10 +41,12 @@ def init_ranking(population):
 def update_solution(rl, ctx, c, population, comparison, q):
     creds = comparison.infer_outcome(rl, ctx, c, q)
     # todo: idea - use gained values as DCG relevance labels -> DCG Fitness
-    for ind, fit in zip(population, creds):
-        ind.fitness.values = (fit,)
+    if creds is not None:
+        for ind, fit in zip(population, creds):
+            ind.fitness.values = (fit,)
 
-    current_best_w = copy.deepcopy(tools.selBest(population, 1))
+    current_best_w = copy.deepcopy(tools.selBest(population, 1))[0]
+
 
     offspring = toolbox.select(population, len(population))
     offspring = list(map(toolbox.clone, offspring))
@@ -62,23 +67,37 @@ def update_solution(rl, ctx, c, population, comparison, q):
     return current_best_w, population
 
 
-def plot_metrics(df, outdir):
-    p = figure(plot_width=1200, plot_height=600)
-    p.title.text = 'Metrics on current run'
-    for c in df.columns:
-        p.line(df.index, df[c], line_width=2, alpha=0.8, muted_alpha=0.2, legend=c)
-    p.legend.location = "top_left"
-    p.legend.click_policy = "hide"
+def plot_metrics(offline_df, online_df, outdir, fitness=None):
+    off = figure(plot_width=1200, plot_height=400, x_range=(0, len(offline_df)), y_range=(0, 1))
+    off.title.text = 'Offline NDCG'
+    for c, color in zip(offline_df.columns, Set1_5):
+        off.line(offline_df.index, offline_df[c], line_width=2, alpha=0.8, muted_alpha=0.2, legend=c, color=color)
+    off.legend.location = "top_left"
+    off.legend.click_policy = "hide"
+
+    for c in online_df.columns:
+        print(f"Final online {c}: {online_df[c].sum()}")
+    
+    # on = figure(plot_width=1200, plot_height=600, x_range=(0, len(offline_df)), y_range=(0, online_df.values.max()))
+    # on.title.text = 'online NDCG'
+    # for c, color in zip(online_df.columns, Set1_5):
+    #     on.line(online_df.index, online_df[c], line_width=2, alpha=0.8, muted_alpha=0.2, legend=c, color=color)
+    # on.legend.location = "top_left"
+    # on.legend.click_policy = "hide"
 
     output_file(str(outdir / "interactive_legend.html"), title="Metrics")
 
-    show(p)
+    show(off)
 
 
-def save_results(offline_evaluation, online_evaluation, out: Path, plot=False):
+def save_results(offline_evaluation, online_evaluation, out: Path, fitness=None, plot=False, gamma=0.995):
     online_df = pd.DataFrame.from_dict(online_evaluation, dtype=np.float64)
+    gm = online_df.index.map(lambda x: gamma ** x)
+    online_df = online_df.multiply(gm, axis='index')
     offline_df = pd.DataFrame.from_dict(offline_evaluation, dtype=np.float64)
     df = online_df.join(offline_df, lsuffix='_online', rsuffix='_offline')
+    if fitness:
+        df['fitness'] = pd.Series(data=fitness, index=online_df.index)
     if not out.exists():
         out.mkdir(parents=True)
 
@@ -90,23 +109,25 @@ def save_results(offline_evaluation, online_evaluation, out: Path, plot=False):
 
     df.to_csv(str(outdir / 'metrics.csv'), index=False, header=True)
     if plot:
-        plot_metrics(df, outdir)
+        plot_metrics(offline_df, online_df, outdir)
 
 
 if __name__ == '__main__':
     np.random.seed(42)
     random.seed(42)
-    feature_count = 45
-    num_rankers = 100
-    num_queries = 1000
+    feature_count = 64
+    num_rankers = 19
+    num_queries = 10000
     CXPB = 0.9
-    MUTPB = 0.2
+    MUTPB = 0.5
+    discount = 0.995
 
     creator.create("FitnessClicks", base.Fitness, weights=(1.0,))
 
     creator.create("Individual", list, fitness=creator.FitnessClicks)
 
     toolbox = base.Toolbox()
+    toolbox.register("map", futures.map)
     toolbox.register("attr_float", sample_unit_sphere, feature_count)
     toolbox.register("ind", tools.initIterate, creator.Individual, toolbox.attr_float)
     toolbox.register("mate", tools.cxTwoPoint)
@@ -117,14 +138,16 @@ if __name__ == '__main__':
 
     multileave = TeamDraftMultileave()
 
-    um = CascadeUserModel("--p_click 0:0.3, 1:0.6, 2:0.9 --p_stop  0:0, 1:0, 2:0")
+    um = CascadeUserModel("--p_click 0:0, 1:0.5, 2:1 --p_stop  0:0, 1:0, 2:0")
 
     pop = toolbox.population(n=num_rankers)
 
-    fn = Path("D:/Projects/Lerot3/data/OHSUMED/Fold1")
-    train = load_queries(str(fn / "train.txt"), 45, False)
-    test = load_queries(str(fn / "test.txt"), 45, False)
-    out = Path("D:/Projects/Lerot3/out/ga_test")
+    dataset = "NP2003"
+    fold = "Fold2"
+    fn = Path("D:/Projects/Lerot3/data/") / dataset / fold
+    train = load_queries(str(fn / "train.txt"), feature_count, False)
+    test = load_queries(str(fn / "test.txt"), feature_count, False)
+    out = Path("D:/Projects/Lerot3/out/ga_test") / dataset / fold
 
     query_keys = sorted(train.keys())
     query_length = len(query_keys)
@@ -132,11 +155,12 @@ if __name__ == '__main__':
     online_evaluation = {}
     offline_evaluation = {}
 
-    evaluations = [('evaluation.NdcgEval', dict(cutoff=1, eval_class=NdcgEval())),
-                   ('evaluation.NdcgEval', dict(cutoff=3, eval_class=NdcgEval())),
-                   ('evaluation.NdcgEval', dict(cutoff=5, eval_class=NdcgEval())),
-                   ('evaluation.NdcgEval', dict(cutoff=7, eval_class=NdcgEval())),
-                   ('evaluation.NdcgEval', dict(cutoff=10, eval_class=NdcgEval()))]
+    evaluations = [('Ndcg', dict(cutoff=1, eval_class=NdcgEval())),
+                   ('Ndcg', dict(cutoff=3, eval_class=NdcgEval())),
+                   ('Ndcg', dict(cutoff=5, eval_class=NdcgEval())),
+                   ('Ndcg', dict(cutoff=7, eval_class=NdcgEval())),
+                   ('Ndcg', dict(cutoff=10, eval_class=NdcgEval()))]
+    fitness = []
     for eval_name, eval_dict in evaluations:
         dict_name = eval_name + '@' + str(eval_dict['cutoff'])
         # Stop if there are duplicate evaluations
@@ -159,13 +183,12 @@ if __name__ == '__main__':
 
         current_solution, pop = update_solution(result_list, context, clicks, pop, multileave, query)
 
+        fitness.append(current_solution.fitness.values[0])
+
         for eval_name, eval_dict in evaluations:
             # Create dict name as done above
             dict_name = eval_name + '@' + str(eval_dict['cutoff'])
             e1 = eval_dict['eval_class'].evaluate_all(GARankingFunction(current_solution), test, eval_dict['cutoff'])
             offline_evaluation[dict_name].append(float(e1))
 
-            # print("Current offline %s = %.3f" % (dict_name, offline_evaluation[dict_name][-1]))
-        # print(f"Query #{query_count} done")
-
-    save_results(offline_evaluation, online_evaluation, out, plot=True)
+    save_results(offline_evaluation, online_evaluation, out, fitness=fitness, plot=True)
