@@ -79,13 +79,13 @@ class ProbabilisticMultileave(AbstractInterleavedComparison):
             if raw_i < n - 1:
                 probs[:, raw_i:-1] = probs[:, raw_i + 1:]
         self.ranking = ranking
-        return ranking, assignments
+        return ranking, self.inverted_rankings
 
     def infer_outcome(self, l, a, c, query):
         l = np.array(l)
         if np.any(c):
             click_ids = np.nonzero(c)[0]
-            probs = self.probability_of_list(l, self.inverted_rankings, click_ids)
+            probs = self.probability_of_list(l, a, click_ids)
             prefs = preferences_of_list(probs, 10000)
             return prefs
 
