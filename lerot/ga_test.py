@@ -1,8 +1,10 @@
+import argparse
 import logging
+import copy
 from collections import namedtuple
 from pathlib import Path
+import gc
 
-import argparse
 import numpy as np
 import pandas as pd
 from bokeh.io import save
@@ -12,7 +14,7 @@ from deap import creator, base, tools
 from joblib import Parallel, delayed
 
 from lerot.evaluation import NdcgEval
-from lerot.interleave import TeamDraftMultileave
+from lerot.interleave import TeamDraftMultileave, ProbabilisticMultileave
 from lerot.query import load_queries
 from lerot.ranker.GARankingFunction import GARankingFunction
 from lerot.user import CascadeUserModel
@@ -54,9 +56,21 @@ def update_solution(rl, ctx, c, population, comparison, q,
         for ind, fit in zip(population, creds):
             ind.fitness.values = (fit,)
         logger.record(**stats.compile(population))
+        
+    ##### Baseline selection - current best
+    current_best_w = copy.deepcopy(tools.selBest(population, 1))[0]
+
+    ##### Average of whole population: -0.05 ndcg
+    # current_best_w = np.mean(population, axis=0)
+
+    ##### Average hall of fame: -0.4
+    # current_best_w = np.mean(hof.items, axis=1)
+
+    ##### Moving average
+    # current_best_w =
 
     if len(hof.items) < hof.maxsize:
-        bst = list(map(toolbox.clone, tools.selBest(population, 10)))
+        bst = list(map(toolbox.clone, tools.selBest(population, 1)))
         for ind in bst:
             hof.insert(ind)
     else:
@@ -77,18 +91,8 @@ def update_solution(rl, ctx, c, population, comparison, q,
             toolbox.mutate(mutant)
             del mutant.fitness.values
 
-    population[:] = toolbox.select(offspring, len(population))
-    ##### Baseline selection - current best
-    # current_best_w = copy.deepcopy(tools.selBest(population, 1))[0]
-
-    ##### Average of whole population: -0.05 ndcg
-    current_best_w = np.mean(population, axis=0)
-
-    ##### Average hall of fame: -0.4
-    # current_best_w = np.mean(hof.items, axis=0)
-
-    ##### Moving average
-    # current_best_w =
+    population[:] = toolbox.select(offspring + hof.items, len(population))
+    
     return current_best_w, population
 
 
@@ -112,7 +116,7 @@ def plot_metrics(offline_df, online_df, outdir, fitness=None):
 
     output_file(str(outdir / "interactive_legend.html"), title="Metrics")
 
-    save(off)
+    show(off)
 
 
 def save_results(offline_evaluation, online_evaluation, out: Path, fitness=None, plot=False, gamma=0.995):
@@ -128,9 +132,18 @@ def save_results(offline_evaluation, online_evaluation, out: Path, fitness=None,
     if plot:
         plot_metrics(offline_df, online_df, out)
 
+        
+def filter_config(config: RUN_CONFIG):
+    if (config.out_path / 'metrics.csv').exists():
+        logging.warning(f"Run cm: {config.cm['name']}, ds: {config.ds['name']}, fold: {config.fold}, run: {config.out_path.parts[-1]} already finished, skipping.")
+        return False
+    else:
+        return True
+
 
 def run(config: RUN_CONFIG):
-    logging.info(f"Started processing cm: {config.cm}, ds: {config.ds}, fold: {config.fold}, run: {config.out_path.parts[0]}.")
+    logging.warning(
+        f"Started processing cm: {config.cm['name']}, ds: {config.ds['name']}, fold: {config.fold}, run: {config.out_path.parts[-1]}.")
     feature_count = config.ds["feature_count"]
     fn = config.in_path
     train = load_queries(str(fn / "train.txt"), feature_count, False)
@@ -160,10 +173,11 @@ def run(config: RUN_CONFIG):
     logger = tools.Logbook()
 
     toolbox.register("population", tools.initRepeat, list, toolbox.ind)
-    halloffame = tools.HallOfFame(10)
+    halloffame = tools.HallOfFame(1)
     pop = toolbox.population(n=config.num_rankers)
-
+#######################################################################
     multileave = TeamDraftMultileave()
+#######################################################################
 
     query_keys = sorted(train.keys())
     query_length = len(query_keys)
@@ -182,6 +196,8 @@ def run(config: RUN_CONFIG):
         dict_name = eval_name + '@' + str(eval_dict['cutoff'])
         online_evaluation[dict_name] = []
         offline_evaluation[dict_name] = []
+        
+    cm = config.cm[config.ds['cm']]
 
     past_best = []
     with open(out / 'fitness.log', 'a+') as lf:
@@ -194,7 +210,7 @@ def run(config: RUN_CONFIG):
                 a = float(eval_dict['eval_class'].evaluate_ranking(result_list, query, eval_dict['cutoff']))
                 online_evaluation[eval_name + '@' + str(eval_dict['cutoff'])].append(a)
 
-            clicks = config.cm["cm"].get_clicks(result_list, query.get_labels())
+            clicks = cm.get_clicks(result_list, query.get_labels())
 
             current_solution, pop = update_solution(result_list, context, clicks, pop, multileave, query,
                                                     logger, toolbox, halloffame, stats, config)
@@ -210,55 +226,72 @@ def run(config: RUN_CONFIG):
                 lf.write('\n')
 
     save_results(offline_evaluation, online_evaluation, out, plot=False)
-    logging.info(f"Finished processing cm: {config.cm}, ds: {config.ds}, fold: {config.fold}, run: {config.out_path.parts[0]}.")
+    #logging.warning(
+    #   f"Finished processing cm: {config.cm['name']}, ds: {config.ds['name']}, fold: {config.fold}, run: {config.out_path.parts[-1]}.")
 
 
 def main():
     # np.random.seed(42)
     # random.seed(42)
     # feat_count = 64
+    # todo: remove unused features
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", default=False)
+    parser.add_argument("-n", default=False)
     args = parser.parse_args()
 
-    num_rankers = 10
-    num_queries = 10000
-    CXPB = 0.6
-    MUTPB = 0.5
-    num_runs = 25
-    exp_name = "ga_baseline_10k"
+    num_rankers = 19
+    num_queries = 1000
+    CXPB = 0.5
+    MUTPB = 0.3
+    num_runs = 1
+    # ${optimizer}_${multileaving}_${num-rankers}_${crossover-prob}_${mutation-prob}
+    if not args.n:
+        raise Exception("Enter name of experiment")
+    
+    exp_name = args.n
     base_in_path = Path("D:/Projects/Lerot3/data/")
     base_out_path = Path("D:/Projects/Lerot3/out") / exp_name
 
     if base_out_path.exists() and not args.c:
         raise Exception("EXPERIMENT ALREADY CONDUCTED")
 
-    logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', level=logging.INFO)
-    logging.getLogger().setLevel(logging.INFO)
+    logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', level=logging.WARNING)
+    logging.getLogger().setLevel(logging.WARNING)
 
     um = [
-        dict(name="per", cm=CascadeUserModel("--p_click 0:0, 1:0.5, 2:1 --p_stop  0:0, 1:0, 2:0")),
-        dict(name="nav", cm=CascadeUserModel("--p_click 0:05, 1:0.5, 2:0.95 --p_stop  0:0.2, 1:0.5, 2:0.9")),
-        dict(name="inf", cm=CascadeUserModel("--p_click 0:0.4, 1:0.7, 2:0.9 --p_stop  0:0.1, 1:0.3, 2:0.5")),
+        dict(
+            name="per", 
+            cm2=CascadeUserModel("--p_click 0:0, 1:1, 2:1 --p_stop 0:0, 1:0, 2:0"),
+            cm3=CascadeUserModel("--p_click 0:0, 1:0.5, 2:1 --p_stop 0:0, 1:0, 2:0")            
+        ),
+        dict(
+            name="nav", 
+            cm2=CascadeUserModel("--p_click 0:0.05, 1:0.95, 2:0.95 --p_stop 0:0.2, 1:0.9, 2:0.9"),
+            cm3=CascadeUserModel("--p_click 0:0.05, 1:0.5, 2:0.95 --p_stop  0:0.2, 1:0.5, 2:0.9")),
+        dict(
+            name="inf", 
+            cm2=CascadeUserModel("--p_click 0:0.4, 1:0.9, 2:0.9 --p_stop 0:0.1, 1:0.5, 2:0.5"),
+            cm3=CascadeUserModel("--p_click 0:0.4, 1:0.7, 2:0.9 --p_stop  0:0.1, 1:0.3, 2:0.5")
+        ),
     ]
 
     ds = [
-      dict(name="OHSUMED", feature_count=45),
-      dict(name="NP2003", feature_count=64),
-      dict(name="NP2004", feature_count=64),
-      dict(name="HP2003", feature_count=64),
-      dict(name="HP2004", feature_count=64),
-      dict(name="MQ2007", feature_count=46),
-      dict(name="MQ2008", feature_count=46),       
-      dict(name="TD2003", feature_count=64),
-      dict(name="TD2004", feature_count=64)
+        dict(name="OHSUMED", feature_count=45, cm='cm3'),
+        #dict(name="NP2003", feature_count=64, cm='cm2'),
+        #dict(name="NP2004", feature_count=64, cm='cm2'),
+        #dict(name="HP2003", feature_count=64, cm='cm2'),
+        #dict(name="HP2004", feature_count=64, cm='cm2'),
+        #dict(name="MQ2007", feature_count=46, cm='cm3'),
+        #dict(name="MQ2008", feature_count=46, cm='cm3'),
+        #dict(name="TD2003", feature_count=64, cm='cm2'),
+        #dict(name="TD2004", feature_count=64, cm='cm2')
     ]
     folds = ["Fold" + str(i) for i in range(1, 6)]
-    with Parallel(n_jobs=5, verbose=49) as parallel:
+    with Parallel(n_jobs=3, verbose=49) as parallel:
         for cm in um:
             for dataset in ds:
                 for fold in folds:
-                    
                     configs = [RUN_CONFIG(num_rankers=num_rankers,
                                           num_queries=num_queries,
                                           CXPB=CXPB,
@@ -268,6 +301,8 @@ def main():
                                           cm=cm,
                                           ds=dataset,
                                           fold=fold) for i in range(0, num_runs)]
+                    configs = filter(filter_config, configs)
+                    gc.collect()
                     parallel(delayed(run)(config) for config in configs)
 
 

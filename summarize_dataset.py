@@ -1,13 +1,19 @@
 from pathlib import Path
 from tqdm import tqdm
+import argparse
 
 import pandas as pd
 
+parser = argparse.ArgumentParser()
+parser.add_argument("-n", default=False)
+args = parser.parse_args()
+
+
 out_path = Path("D:/Projects/Lerot3/out")
-experiment_name = "ga_baseline_moving_avg"
+experiment_name = args.n if args.n else "ga_pm_test"
 um = [
-    # "inf",
-    # "nav",
+    "inf",
+    "nav",
     "per"
 ]
 datasets = [  
@@ -22,7 +28,7 @@ datasets = [
         # "TD2004"
         ]
 folds = ["Fold" + str(i) for i in range(1, 6)]
-runs = [f"{i:03d}" for i in range(0, 25)]
+runs = [f"{i:03d}" for i in range(0, 1)]
 filename = "metrics.csv"
 
 def get_discount(num_queries):
