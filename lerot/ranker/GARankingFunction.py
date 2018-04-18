@@ -24,12 +24,7 @@ class GARankingFunction(AbstractRankingFunction):
         # sort docids by rank
         ranked_docids.sort(reverse=True)
         self.docids = [docid for (_, docid) in ranked_docids]
-        # break ties randomly and sort ranks to compute probabilities
-        ranks = np.asarray([i + 1.0 for i in sorted(rank(scores, ties=self.ties, reverse=False))])
-        # determine probabilities based on (reverse) document ranks
-        max_rank = len(ranks)
-        tmp_val = max_rank / pow(ranks, 3.0)
-        self.probs = tmp_val / sum(tmp_val)
+
 
     def get_ranking(self):
         return self.docids
