@@ -16,6 +16,21 @@ COLUMN_MAPPING = dict(
     offline_std='offline_std@10'
 )
 
+BENCHMARK_DATA = dict(
+    
+    OHSUMED=dict(
+        
+    ),
+    NP2003,
+    HP2003,
+    HP2004,
+    MQ2007,
+    MQ2008,
+    NP2004,
+    TD2003,
+    TD2004
+)
+
 DEFAULT_FILTERS = [
     GroupFilter(column_name='click_model', group='per'),
     GroupFilter(column_name='dataset', group='NP2003')
@@ -29,6 +44,8 @@ def aggregate_data(path: Path, um: list, datasets: list):
             agg = pd.read_csv(path / cm / ds / 'aggregated.csv')
             agg['dataset'] = ds
             agg['click_model'] = cm
+            agg['online_benchmark'] = BENCHMARK_DATA[cm][ds]['online']
+            agg['offline_benchmark'] = BENCHMARK_DATA[cm][ds]['offline']
             df = df.append(agg)
     df.to_csv(path / 'overall_metrics.csv', header=True, index=True)
     return df

@@ -100,6 +100,6 @@ class WTALearningSystem(AbstractLearningSystem):
 
     def _get_new_candidate(self):
         w, u = self.ranker.get_candidate_weight(self.delta)
-        candidate_ranker = copy.deepcopy(self.ranker)
+        candidate_ranker = np.copy(self.ranker)
         candidate_ranker.update_weights(w)
         return candidate_ranker, u

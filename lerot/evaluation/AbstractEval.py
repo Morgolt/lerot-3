@@ -54,15 +54,6 @@ class AbstractEval:
     def evaluate_ranking(self, ranking, query, cutoff=-1):
         raise NotImplementedError("Derived class needs to implement this.")
 
-    def _sort_docids_by_score(self, docids, scores, ties="random"):
-        n = len(docids)
-        if ties == "first":
-            scored_docids = list(zip(scores, reversed(range(n)), docids))
-        elif ties == "last":
-            scored_docids = list(zip(scores, range(n), docids))
-        elif ties == "random":
-            scored_docids = list(zip(scores, np.random.permutation(n), docids))
-        else:
-            raise Exception("Unknown method for breaking ties: \"%s\"" % ties)
-        scored_docids.sort(reverse=True)
-        return [docid for _, _, docid in scored_docids]
+    def _sort_docids_by_score(self, docids, scores, ties='random'):
+        inds = np.argsort(scores)[::-1]
+        return [docids[i] for i in inds]
