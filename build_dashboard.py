@@ -8,6 +8,7 @@ from bokeh.models.widgets import RadioButtonGroup, Select
 from bokeh.palettes import Category10
 from bokeh.plotting import figure
 from tqdm import tqdm
+import numpy as np
 
 COLUMN_MAPPING = dict(
     online='online_mean@10',
@@ -17,18 +18,39 @@ COLUMN_MAPPING = dict(
 )
 
 BENCHMARK_DATA = dict(
-    
-    OHSUMED=dict(
-        
+    per=dict(        
+        HP2003=dict(online=764.4, offline=0.782),
+        NP2003=dict(online=699.5, offline=0.719),
+        TD2003=dict(online=312.2, offline=0.327),
+        HP2004=dict(online=723.3, offline=0.751),
+        NP2004=dict(online=719.9, offline=0.719),
+        TD2004=dict(online=298.9, offline=0.333),
+        MQ2007=dict(online=412.5, offline=0.406),
+        MQ2008=dict(online=523.2, offline=0.493),
+        OHSUMED=dict(online=494.8, offline=0.456)
     ),
-    NP2003,
-    HP2003,
-    HP2004,
-    MQ2007,
-    MQ2008,
-    NP2004,
-    TD2003,
-    TD2004
+    nav=dict(        
+        HP2003=dict(online=701.2, offline=0.764),
+        NP2003=dict(online=637.6, offline=0.711),
+        TD2003=dict(online=272.5, offline=0.315),
+        HP2004=dict(online=663.0, offline=0.74),
+        NP2004=dict(online=653.2, offline=0.717),
+        TD2004=dict(online=263.3, offline=0.314),
+        MQ2007=dict(online=385.9, offline=0.356),
+        MQ2008=dict(online=501.5, offline=0.468),
+        OHSUMED=dict(online=482.6, offline=0.439)
+    ),
+    inf=dict(
+        HP2003=dict(online=650.9, offline=0.759),
+        NP2003=dict(online=603.0, offline=0.704),
+        TD2003=dict(online=251.6, offline=0.286),
+        HP2004=dict(online=616.1, offline=0.732),
+        NP2004=dict(online=617.8, offline=0.711),
+        TD2004=dict(online=245.0, offline=0.299),
+        MQ2007=dict(online=377.2, offline=0.34),
+        MQ2008=dict(online=496.3, offline=0.456),
+        OHSUMED=dict(online=474.3, offline=0.433)
+    )
 )
 
 DEFAULT_FILTERS = [
@@ -57,7 +79,7 @@ def change_eval_mode(source, p, view):
         let f = cb_obj.active;
         let column = f == 0 ? "offline_mean@10" : "online_mean@10";
         
-        p.y_range.end = f == 0 ? 1 : 200;
+        p.y_range.end = f == 0 ? 1 : 1300;
         data['y'] = data[column];
         source.change.emit();        
     """)
@@ -83,10 +105,19 @@ def change_ds(view):
         """)
 
 
-def build_dashboard(path: Path):
+def build_dashboard(path: Path, num_queries=1000):
     output_file(str(path / 'dashboard.html'))
 
-    data = pd.read_csv(str(path / 'overall_metrics.csv'), index_col=0)
+    data = pd.read_csv(str(path / 'overall_metrics.csv'), index_col=0, dtype={
+        'dataset': str,
+        'click_model': str,
+        'online_benchmark': np.float64,
+        'offline_benchmark': np.float64,
+        'online_mean@10': np.float64,
+        'online_std@10': np.float64,
+        'offline_mean @ 10': np.float64,
+        'offline_std @ 10': np.float64
+    })
     COLOR_MAPPING = dict(zip(data.dataset.unique(), Category10[9]))
 
     data['color'] = data.dataset.map(COLOR_MAPPING)
@@ -104,10 +135,13 @@ def build_dashboard(path: Path):
 
     TOOLS = "pan,wheel_zoom,box_zoom,reset,save"
     hover = HoverTool(tooltips=[("NDCG@10", "$y")])
-    p = figure(tools=TOOLS, x_range=(0, 1000), y_range=(0, 1))
+    p = figure(tools=TOOLS, x_range=(0, num_queries), y_range=(0, 1))
     p.add_tools(hover)
 
-    p.line(x='x', y='y', source=source, view=view, line_color=data.color.iloc[0])
+    p.line(x='x', y='y', source=source, view=view, line_color=data.color.iloc[0], legend='GA-TDM')
+    
+    p.line(x='x', y='online_benchmark', source=source, view=view, line_color='red', legend='MGD-19')
+    p.line(x='x', y='offline_benchmark', source=source, view=view, line_color='black', legend='MGD-19')
 
     # Widgets
     # Evaluation mode
@@ -116,6 +150,9 @@ def build_dashboard(path: Path):
     click_model_rb = RadioButtonGroup(labels=['Perfect', 'Navigational', 'Informational'], active=0, callback=change_cm(view))
     # Dataset
     dataset_select = Select(title="Dataset", value="HP2003", options=list(data.dataset.unique()), callback=change_ds(view))
+    
+    # Legend
+    p.legend.location = 'top_left'
 
     wb = widgetbox([eval_mode_rb, click_model_rb, dataset_select])
 
@@ -123,23 +160,36 @@ def build_dashboard(path: Path):
 
 
 if __name__ == '__main__':
-    DATA_PATH = Path('D:/Projects/Lerot3/out')
-    experiment = 'ga_baseline_mt'
-    # um = [
-    #     "inf",
-    #     "nav",
-    #     "per"
-    # ]
-    # datasets = [
-    #     "OHSUMED",
-    #     "NP2003",
-    #     "HP2003",
-    #     "HP2004",
-    #     "MQ2007",
-    #     "MQ2008",
-    #     "NP2004",
-    #     "TD2003",
-    #     "TD2004"
-    # ]
-    # aggregate_data(DATA_PATH / experiment, um, datasets)
-    build_dashboard(DATA_PATH / experiment)
+    import argparse
+    DATA_PATH = Path('/mnt/c/Users/Rodion_Martynov/Documents/projects/Lerot3/out')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-n", default=False)
+    parser.add_argument("-mode", default='dashboard')
+    args = parser.parse_args()
+    if args.n:
+        experiment = args.n
+    else:
+        raise Exception("Name of experiment is missing")
+    
+    um = [
+        "inf",
+        "nav",
+        "per"
+    ]
+    datasets = [
+        "OHSUMED",
+        "NP2003",
+        "HP2003",
+        "HP2004",
+        "MQ2007",
+        "MQ2008",
+        "NP2004",
+        "TD2003",
+        "TD2004"
+    ]
+    if args.mode == 'aggregate':
+        aggregate_data(DATA_PATH / experiment, um, datasets)
+    else:
+        build_dashboard(DATA_PATH / experiment, num_queries=10000)
+
+    print(f"\\multirow{{9}}{{*}}{{\\begin{{turn}}{{90}}\\textit{{{um[row.Index[0]]}}}\\end{turn}}}")

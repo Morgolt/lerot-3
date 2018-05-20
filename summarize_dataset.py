@@ -9,7 +9,7 @@ parser.add_argument("-n", default=False)
 args = parser.parse_args()
 
 
-out_path = Path("D:/Projects/Lerot3/out")
+out_path = Path("/mnt/c/Users/Rodion_Martynov/Documents/projects/Lerot3/out")
 experiment_name = args.n if args.n else "ga_pm_test"
 um = [
     "inf",
@@ -18,17 +18,17 @@ um = [
 ]
 datasets = [  
         "OHSUMED",
-        # "NP2003",
-        # "HP2003",
-        # "HP2004",
-        # "MQ2007",
-        # "MQ2008",
-        # "NP2004",
-        # "TD2003",
-        # "TD2004"
+        "NP2003",
+        "HP2003",
+        "HP2004",
+        "MQ2007",
+        "MQ2008",
+        "NP2004",
+        "TD2003",
+        "TD2004"
         ]
 folds = ["Fold" + str(i) for i in range(1, 6)]
-runs = [f"{i:03d}" for i in range(0, 1)]
+runs = [f"{i:03d}" for i in range(0, 25)]
 filename = "metrics.csv"
 
 def get_discount(num_queries):
@@ -62,7 +62,7 @@ for cm in tqdm(um, desc='cm'):
         perf = pd.concat((online_perf, online_std, offline_perf, offline_std), axis=1)
         perf.columns = ["online_mean@10", "online_std@10", "offline_mean@10", "offline_std@10"]
 
-        if (out_path / experiment_name / cm / ds / "aggregated.csv").exists():
-            raise Exception("EXPERIMENT ALREADY CONDUCTED")
+        #if (out_path / experiment_name / cm / ds / "aggregated.csv").exists():
+        #    raise Exception("EXPERIMENT ALREADY CONDUCTED")
 
         perf.to_csv(str(out_path / experiment_name / cm / ds / "aggregated.csv"), index=False, header=True)
